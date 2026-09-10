@@ -250,8 +250,10 @@ with st.container():
     st.subheader("🗓️ 월(주차) × 요일별 관객수 분포 (캘린더 히트맵)")
 
     # 1. 캘린더 피처 생성 (월-주차, 요일)
-    # dt.floor('MS')를 사용하여 해당 월의 첫 날 날짜를 구하고 주차를 계산합니다.
-    first_day_of_month_weekday = daily_total["기준일자"].dt.floor("MS").dt.weekday
+    # dt.to_period('M').dt.to_timestamp()를 사용하여 안전하게 해당 월의 1일 구하기
+    first_day_of_month_weekday = (
+        daily_total["기준일자"].dt.to_period("M").dt.to_timestamp().dt.weekday
+    )
 
     daily_total["월_주차"] = (
         daily_total["기준일자"].dt.strftime("%Y-%m")
