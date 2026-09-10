@@ -309,7 +309,7 @@ with st.container():
     )
 
     # 레이아웃 조절 (y축을 위에서 아래로 순차 배치)
-    fig_heatmap.update_layout(yaxis=dict(autorange="reverse"))
+    fig_heatmap.update_yaxes(autorange="reversed")
 
     # 스트림릿에 히트맵 표시
     st.plotly_chart(fig_heatmap, use_container_width=True)
