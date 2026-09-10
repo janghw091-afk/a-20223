@@ -165,7 +165,7 @@ with st.container():
     # 3. 커스텀 그래픽을 위해 plotly.graph_objects 사용
     fig_ma = go.Figure()
 
-    # 원본 일일 총 관객수 선 (연하게 표시: opacity 및 색상 조정)
+    # 원본 일일 총 관객수 선 (연하게 표시)
     fig_ma.add_trace(
         go.Scatter(
             x=daily_total["기준일자"],
@@ -192,7 +192,7 @@ with st.container():
         title="기준일자별 TOP10 전체 관객수 합계 및 7일 이동평균 추이",
         xaxis_title="날짜",
         yaxis_title="총 관객수",
-        hovermode="x unified",  # 마우스 커서 위치의 값을 한 번에 표시
+        hovermode="x unified",
     )
 
     # 스트림릿에 이동평균선 그래프 표시
@@ -200,3 +200,122 @@ with st.container():
 
     # 알 수 있는 것 문구 작성 공간
     st.info("💡 **이 그래프로 알 수 있는 것:** (이곳에 분석 내용을 작성하세요.)")
+
+st.divider()
+
+
+# -------------------------------------------------------------------
+# [8. 구역 5: 전체 박스오피스 월별 관객수 합계 (막대 그래프 - px.bar)]
+# -------------------------------------------------------------------
+with st.container():
+    st.subheader("📅 전체 박스오피스 월별 총 관객수 (막대 그래프)")
+
+    # 1. daily_total 데이터프레임을 연-월(YYYY-MM) 단위로 재그룹화하여 합산
+    daily_total["연월"] = daily_total["기준일자"].dt.strftime("%Y-%m")
+
+    # 연월 기준으로 관객수 총합 계산
+    monthly_total = (
+        daily_total.groupby("연월")["해당일관객수"].sum().reset_index()
+    )
+
+    # 2. Plotly 막대 그래프 생성 (px.bar)
+    fig_bar = px.bar(
+        monthly_total,
+        x="연월",
+        y="해당일관객수",
+        title="연-월별 TOP10 전체 관객수 합계",
+        labels={"연월": "연월 (YYYY-MM)", "해당일관객수": "월간 총 관객수"},
+        text_auto=".2s",
+    )
+
+    # 막대 디자인 커스텀
+    fig_bar.update_traces(
+        marker_color="#2E86C1",
+        textposition="outside",
+    )
+
+    # 스트림릿에 막대 그래프 표시
+    st.plotly_chart(fig_bar, use_container_width=True)
+
+    # 알 수 있는 것 문구 작성 공간
+    st.info("💡 **이 그래프로 알 수 있는 것:** (이곳에 분석 내용을 작성하세요.)")
+
+st.divider()
+
+
+# -------------------------------------------------------------------
+# [9. 구역 6: 월(주차) × 요일별 캘린더 히트맵 (px.density_heatmap)]
+# -------------------------------------------------------------------
+with st.container():
+    st.subheader("🗓️ 월(주차) × 요일별 관객수 분포 (캘린더 히트맵)")
+
+    # 1. 캘린더 피처 생성 (월-주차, 요일)
+    # 연-월-주차 컬럼 생성 (예: 2023-01 1주차)
+    daily_total["월_주차"] = (
+        daily_total["기준일자"].dt.strftime("%Y-%m")
+        + " "
+        + (
+            (
+                daily_total["기준일자"].dt.day
+                + daily_total["기준일자"]
+                .dt.replace(day=1)
+                .dt.weekday
+            )
+            // 7
+            + 1
+        ).astype(str)
+        + "주차"
+    )
+
+    # 요일 이름 컬럼 생성 (월요일 ~ 일요일)
+    weekday_kr = ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
+    daily_total["요일_코드"] = daily_total["기준일자"].dt.weekday
+    daily_total["요일"] = daily_total["요일_코드"].apply(
+        lambda x: weekday_kr[x]
+    )
+
+    # 날짜를 yyyy-mm-dd 형태의 문자열로 저장 (마우스 호버 툴팁용)
+    daily_total["날짜_str"] = daily_total["기준일자"].dt.strftime("%Y-%m-%d")
+
+    # 2. 히트맵 생성 (x축: 요일, y축: 월_주차, z: 관객수 합계)
+    fig_heatmap = px.density_heatmap(
+        daily_total,
+        x="요일",
+        y="월_주차",
+        z="해당일관객수",
+        histfunc="sum",
+        title="월(주차) 및 요일별 일일 관객수 히트맵",
+        labels={
+            "요일": "요일",
+            "월_주차": "월 및 주차",
+            "해당일관객수": "일일 총 관객수",
+        },
+        category_orders={"요일": weekday_kr},  # 요일을 월~일 순서로 고정
+        color_continuous_scale="Reds",  # 관객수가 많을수록 진한 빨간색
+        hover_data={
+            "날짜_str": True,  # yyyy-mm-dd 날짜 표기
+            "요일": True,
+            "월_주차": True,
+            "해당일관객수": ":,d",  # 천 단위 쉼표 서식
+        },
+    )
+
+    # 툴팁 레이블 수정
+    fig_heatmap.update_traces(
+        hovertemplate=(
+            "<b>날짜: %{customdata[0]}</b><br>"
+            "요일: %{x}<br>"
+            "주차: %{y}<br>"
+            "총 관객수: %{z:,}명<extra></extra>"
+        )
+    )
+
+    # 레이아웃 조절 (y축을 위에서 아래로 순차 배치)
+    fig_heatmap.update_layout(yaxis=dict(autorange="reverse"))
+
+    # 스트림릿에 히트맵 표시
+    st.plotly_chart(fig_heatmap, use_container_width=True)
+
+    # 알 수 있는 것 문구 작성 공간
+    st.info("💡 **이 그래프로 알 수 있는 것:** (이곳에 분석 내용을 작성하세요.)")
+    
