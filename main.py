@@ -250,7 +250,6 @@ with st.container():
     st.subheader("🗓️ 월(주차) × 요일별 관객수 분포 (캘린더 히트맵)")
 
     # 1. 캘린더 피처 생성 (월-주차, 요일)
-    # dt.to_period('M').dt.to_timestamp()를 사용하여 안전하게 해당 월의 1일 구하기
     first_day_of_month_weekday = (
         daily_total["기준일자"].dt.to_period("M").dt.to_timestamp().dt.weekday
     )
@@ -275,17 +274,17 @@ with st.container():
     # 날짜를 yyyy-mm-dd 형태의 문자열로 저장 (마우스 호버 툴팁용)
     daily_total["날짜_str"] = daily_total["기준일자"].dt.strftime("%Y-%m-%d")
 
-    # 2. 히트맵 생성 (x축: 요일, y축: 월_주차, z: 관객수 합계)
+    # 2. 히트맵 생성 (x축: 월_주차, y축: 요일, z: 관객수 합계)
     fig_heatmap = px.density_heatmap(
         daily_total,
-        x="요일",
-        y="월_주차",
+        x="월_주차",
+        y="요일",
         z="해당일관객수",
         histfunc="sum",
         title="월(주차) 및 요일별 일일 관객수 히트맵",
         labels={
-            "요일": "요일",
             "월_주차": "월 및 주차",
+            "요일": "요일",
             "해당일관객수": "일일 총 관객수",
         },
         category_orders={"요일": weekday_kr},  # 요일을 월~일 순서로 고정
@@ -302,13 +301,13 @@ with st.container():
     fig_heatmap.update_traces(
         hovertemplate=(
             "<b>날짜: %{customdata[0]}</b><br>"
-            "요일: %{x}<br>"
-            "주차: %{y}<br>"
+            "주차: %{x}<br>"
+            "요일: %{y}<br>"
             "총 관객수: %{z:,}명<extra></extra>"
         )
     )
 
-    # 레이아웃 조절 (y축을 위에서 아래로 순차 배치)
+    # y축 요일 순서를 월요일(상단) ~ 일요일(하단) 순서로 보기 좋게 반전
     fig_heatmap.update_yaxes(autorange="reversed")
 
     # 스트림릿에 히트맵 표시
