@@ -102,24 +102,39 @@ st.divider()
 
 
 # -------------------------------------------------------------------
-# [6. 구역 3: 누적관객수 TOP 5 영화 비교 (다중 선 그래프)]
+# [6. 구역 3: 20일 이상 상위권 유지 영화 중 TOP 5 비교 (다중 선 그래프)]
 # -------------------------------------------------------------------
 with st.container():
-    st.subheader("🏆 누적관객수 TOP 5 영화 비교 (다중 선 그래프)")
+    st.subheader("🏆 TOP 10 유지 20일 이상 영화 중 누적관객수 TOP 5 비교")
 
-    # 1. 전체 데이터에서 누적관객수가 가장 높은 상위 5개 영화명 추출
-    top5_movies = movie_order[:5]
+    # 1. 영화별 TOP 10 차트 등재 일수(행 수) 집계
+    movie_counts = df.groupby("영화명")["기준일자"].count()
 
-    # 2. 상위 5개 영화에 해당하는 데이터만 필터링
-    top5_df = df[df["영화명"].isin(top5_movies)]
+    # 2. 등장 일수가 20일 이상인 영화 목록 추출
+    long_running_movies = movie_counts[movie_counts >= 20].index
 
-    # 3. 다중 선 그래프 생성 (color="영화명"을 주어 영화별 색상 및 범례 분리)
+    # 3. 20일 이상 등장한 영화들만 필터링한 데이터셋 생성
+    filtered_df = df[df["영화명"].isin(long_running_movies)]
+
+    # 4. 해당 영화들 중 최대 누적관객수 기준으로 상위 5개 영화명 선택
+    top5_long_running = (
+        filtered_df.groupby("영화명")["누적관객수"]
+        .max()
+        .sort_values(ascending=False)
+        .head(5)
+        .index
+    )
+
+    # 5. 상위 5개 영화의 데이터만 필터링
+    top5_df = filtered_df[filtered_df["영화명"].isin(top5_long_running)]
+
+    # 6. 다중 선 그래프 생성 (color="영화명"으로 각 영화별 색상 및 범례 표기)
     fig_multi_line = px.line(
         top5_df,
         x="기준일자",
         y="누적관객수",
         color="영화명",
-        title="누적관객수 상위 5개 영화의 기준일자별 누적관객수 추이 비교",
+        title="20일 이상 등재 영화 중 누적관객수 상위 5개 영화의 누적관객수 추이",
         labels={"기준일자": "날짜", "누적관객수": "누적 관객수", "영화명": "영화 제목"},
     )
 
