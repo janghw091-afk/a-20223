@@ -1,5 +1,6 @@
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import streamlit as st
 
 # 페이지 기본 설정 (타이틀 및 넓은 레이아웃 적용)
@@ -140,6 +141,62 @@ with st.container():
 
     # 스트림릿에 다중 선 그래프 표시
     st.plotly_chart(fig_multi_line, use_container_width=True)
+
+    # 알 수 있는 것 문구 작성 공간
+    st.info("💡 **이 그래프로 알 수 있는 것:** (이곳에 분석 내용을 작성하세요.)")
+
+st.divider()
+
+
+# -------------------------------------------------------------------
+# [7. 구역 4: 전체 박스오피스 총 관객수 및 7일 이동평균선 (Plotly go)]
+# -------------------------------------------------------------------
+with st.container():
+    st.subheader("📉 전체 박스오피스 일일 총 관객수 및 7일 이동평균선")
+
+    # 1. 기준일자별 TOP10 영화의 해당일관객수 총합 계산
+    daily_total = df.groupby("기준일자")["해당일관객수"].sum().reset_index()
+
+    # 2. 7일 이동평균선 컬럼 생성 (rolling window 사용)
+    daily_total["7일_이동평균"] = (
+        daily_total["해당일관객수"].rolling(window=7).mean()
+    )
+
+    # 3. 커스텀 그래픽을 위해 plotly.graph_objects 사용
+    fig_ma = go.Figure()
+
+    # 원본 일일 총 관객수 선 (연하게 표시: opacity 및 색상 조정)
+    fig_ma.add_trace(
+        go.Scatter(
+            x=daily_total["기준일자"],
+            y=daily_total["해당일관객수"],
+            mode="lines",
+            name="일일 총 관객수 (원본)",
+            line=dict(color="rgba(150, 150, 150, 0.4)", width=1.5),
+        )
+    )
+
+    # 7일 이동평균선 (진하게 표시)
+    fig_ma.add_trace(
+        go.Scatter(
+            x=daily_total["기준일자"],
+            y=daily_total["7일_이동평균"],
+            mode="lines",
+            name="7일 이동평균",
+            line=dict(color="#FF4B4B", width=3),
+        )
+    )
+
+    # 레이아웃 옵션 설정
+    fig_ma.update_layout(
+        title="기준일자별 TOP10 전체 관객수 합계 및 7일 이동평균 추이",
+        xaxis_title="날짜",
+        yaxis_title="총 관객수",
+        hovermode="x unified",  # 마우스 커서 위치의 값을 한 번에 표시
+    )
+
+    # 스트림릿에 이동평균선 그래프 표시
+    st.plotly_chart(fig_ma, use_container_width=True)
 
     # 알 수 있는 것 문구 작성 공간
     st.info("💡 **이 그래프로 알 수 있는 것:** (이곳에 분석 내용을 작성하세요.)")
