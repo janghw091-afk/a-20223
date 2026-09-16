@@ -278,7 +278,7 @@ with st.container():
 st.divider()
 
 # -----------------------------------------------------------------------------
-# 8. 영화 제작 상위 10개 국가별 최다 제작 장르 & 최고 흥행 영화 (무지개 색상)
+# 8. 영화 제작 상위 10개 국가별 최다 제작 장르 & 최고 흥행 영화
 # -----------------------------------------------------------------------------
 st.header("8. 영화 제작 상위 10개 국가별 최다 제작 장르 & 최고 흥행 영화")
 
@@ -307,31 +307,31 @@ top_movie_df = (
 )
 top_movie_df.columns = ['nation', '흥행영화명', '흥행영화장르', '흥행관객수']
 
-# 4) 정보 통합 (총 편수 순서 정렬)
+# 4) 정보 통합 및 정렬 (가장 많은 제작 편수를 기록한 국가가 맨 위로 오도록 정렬)
 top10_info = pd.merge(nation_total_counts, top_genre_df, on='nation')
 top10_info = pd.merge(top10_info, top_movie_df, on='nation')
 
+# Y축 역순(autorange="reversed") 조합을 고려해 상단에 가장 큰 국가가 배치되도록 순서 설정
 top10_info['nation'] = pd.Categorical(top10_info['nation'], categories=nation_total_counts['nation'], ordered=True)
 top10_info = top10_info.sort_values('nation').reset_index(drop=True)
 
-# 막대 내부 텍스트 구성: 명확한 명칭 구분
+# 막대 내부 텍스트 구성: 항목명과 값을 명확히 분리
 top10_info['bar_label'] = top10_info.apply(
     lambda r: f" [가장 많이 만들어진 장르]: {r['genre']}({r['최다장르편수']}편)  |  [가장 흥행한 영화]: {r['흥행영화명']} ", 
     axis=1
 )
 
-# 무지개 팔레트 적용 (Rainbow)
+# 깔끔하고 안정적인 톤(Teal/Blue 계열 단색 조합) 적용
 fig_top_genre = px.bar(
     top10_info,
     x='국가별총편수',
     y='nation',
-    color='nation',
     orientation='h',
     text='bar_label',
     custom_data=['genre', '최다장르편수', '흥행영화명', '흥행영화장르', '흥행관객수'],
-    title='영화 제작 상위 10개 국가 (영화가 가장 많은 순으로 정렬)',
+    title='영화 제작 상위 10개 국가 (가장 긴 막대부터 순서대로 정렬)',
     labels={'nation': '제작 국가', '국가별총편수': '총 제작 영화 수 (개)'},
-    color_discrete_sequence=px.colors.sequential.Rainbow
+    color_discrete_sequence=['#4E79A7']
 )
 
 fig_top_genre.update_traces(
@@ -348,11 +348,10 @@ fig_top_genre.update_traces(
 
 fig_top_genre.update_layout(
     yaxis=dict(autorange="reversed"),
-    showlegend=False,
     margin=dict(t=50, b=20, l=20, r=20)
 )
 
 st.plotly_chart(fig_top_genre, use_container_width=True)
 
 with st.container():
-    st.info("💡 **이 그래프로 알 수 있는 것:** 영화를 가장 많이 제작한 국가 순서(1위~10위)대로 무지개 색상 막대로 정렬하여, 각 국가별 **[가장 많이 만들어진 장르]**와 **[가장 흥행한 영화 및 해당 장르]**를 시각적으로 빠르게 구분할 수 있습니다.")
+    st.info("💡 **이 그래프로 알 수 있는 것:** 영화를 가장 많이 제작한 국가부터 순서대로 막대가 길게 표시되며, 각 막대 안에서 **[가장 많이 만들어진 장르]**와 **[가장 흥행한 영화]**가 깔끔한 단색 디자인으로 정돈되어 나타납니다.")
