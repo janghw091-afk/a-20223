@@ -117,7 +117,6 @@ fig_hist.update_layout(
 
 st.plotly_chart(fig_hist, use_container_width=True)
 
-# 가장 관객 수가 많은 영화 정보 추출
 top_movie = df.loc[df['total_audi'].idxmax()]
 top_movie_name = top_movie['movieNm']
 top_movie_audi = top_movie['total_audi']
@@ -132,7 +131,6 @@ st.divider()
 # -----------------------------------------------------------------------------
 st.header("4. 개봉일 스크린수와 총 관객 수의 관계")
 
-# 개봉일 스크린수 vs 총 관객 수 산점도 (장르별 색상 지정, 영화명 호버 표기)
 fig_scatter = px.scatter(
     df,
     x='first_scrn',
@@ -162,6 +160,46 @@ fig_scatter.update_layout(
 
 st.plotly_chart(fig_scatter, use_container_width=True)
 
-# 그래프 설명 박스 구역
 with st.container():
     st.info("💡 **이 그래프로 알 수 있는 것:** 개봉일 스크린수가 확보될수록 최종 총 관객 수도 증가하는 대체적인 우상향 경향성을 보이며, 초기의 상영관 확보(스크린수)가 흥행 성공에 유리한 고지를 점하는 데 중요한 요소임을 알 수 있습니다.")
+
+st.divider()
+
+# -----------------------------------------------------------------------------
+# 5. 주요 장르별 총 관객 수 분포 (박스플롯)
+# -----------------------------------------------------------------------------
+st.header("5. 주요 장르별 총 관객 수 분포 (10편 이상 장르)")
+
+# 영화 수 10편 이상인 장르만 필터링
+genre_counts_series = df['genre'].value_counts()
+major_genres = genre_counts_series[genre_counts_series >= 10].index
+df_filtered = df[df['genre'].isin(major_genres)]
+
+# 박스플롯 생성 (이상치 점에 영화명 표기)
+fig_box = px.box(
+    df_filtered,
+    x='genre',
+    y='total_audi',
+    color='genre',
+    hover_name='movieNm',
+    hover_data={'total_audi': ':,', 'genre': False},
+    points='outliers',
+    title='10편 이상 개봉 장르별 총 관객 수(total_audi) 상자 그림',
+    labels={'genre': '장르', 'total_audi': '총 관객 수 (명)'},
+    color_discrete_sequence=px.colors.qualitative.Pastel
+)
+
+fig_box.update_traces(
+    hovertemplate='<b>%{hovertext}</b><br>총 관객 수: %{y:,}명'
+)
+
+fig_box.update_layout(
+    showlegend=False,
+    margin=dict(t=50, b=20, l=20, r=20)
+)
+
+st.plotly_chart(fig_box, use_container_width=True)
+
+# 그래프 설명 박스 구역
+with st.container():
+    st.info("💡 **이 그래프로 알 수 있는 것:** 영화 편수가 많은 주요 장르 간의 관객 수 중위수와 편차를 한눈에 비교할 수 있으며, 상자 밖의 아웃라이어(이상치) 점들을 통해 일반적인 흥행 범주를 뛰어넘은 초대형 흥행작을 쉽게 식별할 수 있습니다.")
