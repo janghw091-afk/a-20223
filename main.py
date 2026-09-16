@@ -170,12 +170,10 @@ st.divider()
 # -----------------------------------------------------------------------------
 st.header("5. 주요 장르별 총 관객 수 분포 (10편 이상 장르)")
 
-# 영화 수 10편 이상인 장르만 필터링
 genre_counts_series = df['genre'].value_counts()
 major_genres = genre_counts_series[genre_counts_series >= 10].index
 df_filtered = df[df['genre'].isin(major_genres)]
 
-# 박스플롯 생성 (이상치 점에 영화명 표기)
 fig_box = px.box(
     df_filtered,
     x='genre',
@@ -200,6 +198,48 @@ fig_box.update_layout(
 
 st.plotly_chart(fig_box, use_container_width=True)
 
-# 그래프 설명 박스 구역
 with st.container():
     st.info("💡 **이 그래프로 알 수 있는 것:** 영화 편수가 많은 주요 장르 간의 관객 수 중위수와 편차를 한눈에 비교할 수 있으며, 상자 밖의 아웃라이어(이상치) 점들을 통해 일반적인 흥행 범주를 뛰어넘은 초대형 흥행작을 쉽게 식별할 수 있습니다.")
+
+st.divider()
+
+# -----------------------------------------------------------------------------
+# 6. 개봉일 스크린수, 총 관객 수 및 첫 주 관객 수의 관계 (버블 그래프)
+# -----------------------------------------------------------------------------
+st.header("6. 개봉일 스크린수 vs 총 관객 수 (버블 크기: 개봉 첫 주 관객 수)")
+
+# 버블 차트 생성 (점 크기를 first_week_audi로 지정)
+fig_bubble = px.scatter(
+    df,
+    x='first_scrn',
+    y='total_audi',
+    size='first_week_audi',
+    color='genre',
+    hover_name='movieNm',
+    hover_data={'first_scrn': ':,', 'total_audi': ':,', 'first_week_audi': ':,', 'genre': True},
+    title='개봉일 스크린수 vs 총 관객 수 (버블 크기: 개봉 첫 주 관객 수)',
+    labels={
+        'first_scrn': '개봉일 스크린수 (개)',
+        'total_audi': '총 관객 수 (명)',
+        'first_week_audi': '개봉 첫 주 관객 수',
+        'genre': '장르'
+    },
+    opacity=0.7,
+    size_max=40,
+    color_discrete_sequence=px.colors.qualitative.Pastel
+)
+
+fig_bubble.update_traces(
+    hovertemplate='<b>%{hovertext}</b><br>장르: %{customdata[0]}<br>개봉일 스크린수: %{x:,}개<br>총 관객 수: %{y:,}명<br>첫 주 관객 수: %{customdata[1]:,}명'
+)
+
+fig_bubble.update_layout(
+    margin=dict(t=50, b=20, l=20, r=20),
+    legend_title_text='장르'
+)
+
+st.plotly_chart(fig_bubble, use_container_width=True)
+
+# 그래프 설명 박스 구역
+with st.container():
+    st.info("💡 **이 그래프로 알 수 있는 것:** 개봉일 스크린수와 최종 총 관객 수뿐만 아니라 '개봉 첫 주 관객 수(버블 크기)'까지 함께 입체적으로 비교할 수 있어, 초반 폭발적인 흥행세를 기반으로 최종 대박을 터뜨린 작품과 입소문으로 장기 흥행에 성공한 작품의 차이를 직관적으로 식별할 수 있습니다.")
