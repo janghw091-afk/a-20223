@@ -278,28 +278,41 @@ with st.container():
 st.divider()
 
 # -----------------------------------------------------------------------------
-# 8. 제작 국가 및 장르별 흥행 관객 수 분포 (트리맵 그래프)
+# 8. 상위 10개 국가별 영화 편수 및 주력 장르 구성 (누적 막대 그래프)
 # -----------------------------------------------------------------------------
-st.header("8. 제작 국가 및 장르별 흥행 관객 수 분포")
+st.header("8. 영화 제작 상위 10개 국가별 주력 장르 구성")
 
-fig_treemap_nation = px.treemap(
-    df,
-    path=[px.Constant("전체 국가"), 'nation', 'genre', 'movieNm'],
-    values='total_audi',
-    title='제작 국가 → 장르 → 영화별 총 관객 수 (칸 크기: 총 관객 수)',
-    color='nation',
+# 상위 10개 국가 추출
+top10_nations = df['nation'].value_counts().head(10).index
+df_top10 = df[df['nation'].isin(top10_nations)]
+
+# 국가 및 장르별 영화 편수 집계
+nation_genre_df = df_top10.groupby(['nation', 'genre']).size().reset_index(name='영화 수')
+
+# 누적 막대 그래프 생성
+fig_top10_bar = px.bar(
+    nation_genre_df,
+    x='nation',
+    y='영화 수',
+    color='genre',
+    title='상위 10개 제작 국가별 영화 편수 및 장르 비중',
+    labels={'nation': '제작 국가', '영화 수': '영화 편수 (개)', 'genre': '장르'},
+    category_orders={'nation': top10_nations.tolist()},
     color_discrete_sequence=px.colors.qualitative.Pastel
 )
 
-fig_treemap_nation.update_traces(
-    hovertemplate='<b>영화/그룹:</b> %{label}<br><b>총 관객 수:</b> %{value:,}명'
+fig_top10_bar.update_traces(
+    hovertemplate='<b>국가:</b> %{x}<br><b>장르:</b> %{fullData.name}<br><b>편수:</b> %{y}편'
 )
 
-fig_treemap_nation.update_layout(
-    margin=dict(t=50, b=20, l=20, r=20)
+fig_top10_bar.update_layout(
+    xaxis_title="제작 국가",
+    yaxis_title="영화 편수 (개)",
+    margin=dict(t=50, b=20, l=20, r=20),
+    legend_title_text='장르'
 )
 
-st.plotly_chart(fig_treemap_nation, use_container_width=True)
+st.plotly_chart(fig_top10_bar, use_container_width=True)
 
 with st.container():
-    st.info("💡 **이 그래프로 알 수 있는 것:** 제작 국가(nation)와 장르(genre)의 결합 구조 속에서 각 영역이 실질적으로 동원한 관객 수 규모를 칸의 크기로 직관적으로 파악할 수 있으며, 국적별 주력 흥행 장르와 대표 영화를 손쉽게 비교분석할 수 있습니다.")
+    st.info("💡 **이 그래프로 알 수 있는 것:** 영화를 가장 많이 제작한 상위 10개 국가 목록을 확인하고, 각 국가에서 가장 활발하게 제작된 주력 장르 구성과 전체 편수를 직관적으로 비교할 수 있습니다.")
