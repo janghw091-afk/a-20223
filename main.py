@@ -254,7 +254,6 @@ st.divider()
 # -----------------------------------------------------------------------------
 st.header("7. 제작 국가 및 장르별 영화 편수 구조")
 
-# 선버스트 차트 생성 (nation -> genre 계층 구조, 칸 크기: 영화 편수)
 fig_sunburst = px.sunburst(
     df,
     path=['nation', 'genre'],
@@ -273,6 +272,34 @@ fig_sunburst.update_layout(
 
 st.plotly_chart(fig_sunburst, use_container_width=True)
 
-# 그래프 설명 박스 구역
 with st.container():
     st.info("💡 **이 그래프로 알 수 있는 것:** 주요 영화 제작 국가(한국, 미국 등)별 영화 점유율과 함께 각 국가 내에서 어떤 장르의 영화가 주를 이루는지 계층 구조를 직관적으로 파악할 수 있습니다.")
+
+st.divider()
+
+# -----------------------------------------------------------------------------
+# 8. 제작 국가 및 장르별 흥행 관객 수 분포 (트리맵 그래프)
+# -----------------------------------------------------------------------------
+st.header("8. 제작 국가 및 장르별 흥행 관객 수 분포")
+
+fig_treemap_nation = px.treemap(
+    df,
+    path=[px.Constant("전체 국가"), 'nation', 'genre', 'movieNm'],
+    values='total_audi',
+    title='제작 국가 → 장르 → 영화별 총 관객 수 (칸 크기: 총 관객 수)',
+    color='nation',
+    color_discrete_sequence=px.colors.qualitative.Pastel
+)
+
+fig_treemap_nation.update_traces(
+    hovertemplate='<b>영화/그룹:</b> %{label}<br><b>총 관객 수:</b> %{value:,}명'
+)
+
+fig_treemap_nation.update_layout(
+    margin=dict(t=50, b=20, l=20, r=20)
+)
+
+st.plotly_chart(fig_treemap_nation, use_container_width=True)
+
+with st.container():
+    st.info("💡 **이 그래프로 알 수 있는 것:** 제작 국가(nation)와 장르(genre)의 결합 구조 속에서 각 영역이 실질적으로 동원한 관객 수 규모를 칸의 크기로 직관적으로 파악할 수 있으며, 국적별 주력 흥행 장르와 대표 영화를 손쉽게 비교분석할 수 있습니다.")
