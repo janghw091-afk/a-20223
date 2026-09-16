@@ -19,6 +19,11 @@ def load_data():
     if 'genre' in df.columns:
         df['genre'] = df['genre'].astype(str).apply(lambda x: x.split('|')[0].strip() if x and x != 'nan' else '기타')
         
+    # nation 결측치 및 빈값 처리
+    if 'nation' in df.columns:
+        df['nation'] = df['nation'].fillna('기타').astype(str).str.strip()
+        df['nation'] = df['nation'].apply(lambda x: '기타' if x == 'nan' or x == '' else x)
+        
     return df
 
 df = load_data()
@@ -208,7 +213,6 @@ st.divider()
 # -----------------------------------------------------------------------------
 st.header("6. 개봉일 스크린수 vs 총 관객 수 (버블 크기: 개봉 첫 주 관객 수)")
 
-# 버블 차트 생성 (점 크기를 first_week_audi로 지정)
 fig_bubble = px.scatter(
     df,
     x='first_scrn',
@@ -240,6 +244,35 @@ fig_bubble.update_layout(
 
 st.plotly_chart(fig_bubble, use_container_width=True)
 
-# 그래프 설명 박스 구역
 with st.container():
     st.info("💡 **이 그래프로 알 수 있는 것:** 개봉일 스크린수와 최종 총 관객 수뿐만 아니라 '개봉 첫 주 관객 수(버블 크기)'까지 함께 입체적으로 비교할 수 있어, 초반 폭발적인 흥행세를 기반으로 최종 대박을 터뜨린 작품과 입소문으로 장기 흥행에 성공한 작품의 차이를 직관적으로 식별할 수 있습니다.")
+
+st.divider()
+
+# -----------------------------------------------------------------------------
+# 7. 제작 국가 및 장르별 영화 편수 구조 (선버스트 그래프)
+# -----------------------------------------------------------------------------
+st.header("7. 제작 국가 및 장르별 영화 편수 구조")
+
+# 선버스트 차트 생성 (nation -> genre 계층 구조, 칸 크기: 영화 편수)
+fig_sunburst = px.sunburst(
+    df,
+    path=['nation', 'genre'],
+    title='제작 국가(nation) → 장르(genre) 계층별 영화 편수 구조 (칸 크기: 영화 편수)',
+    color='nation',
+    color_discrete_sequence=px.colors.qualitative.Pastel
+)
+
+fig_sunburst.update_traces(
+    hovertemplate='<b>구분:</b> %{label}<br><b>영화 편수:</b> %{value}편<br><b>상위 계층 대비 비중:</b> %{percentParent:.1%}<br><b>전체 대비 비중:</b> %{percentRoot:.1%}'
+)
+
+fig_sunburst.update_layout(
+    margin=dict(t=50, b=20, l=20, r=20)
+)
+
+st.plotly_chart(fig_sunburst, use_container_width=True)
+
+# 그래프 설명 박스 구역
+with st.container():
+    st.info("💡 **이 그래프로 알 수 있는 것:** 주요 영화 제작 국가(한국, 미국 등)별 영화 점유율과 함께 각 국가 내에서 어떤 장르의 영화가 주를 이루는지 계층 구조를 직관적으로 파악할 수 있습니다.")
