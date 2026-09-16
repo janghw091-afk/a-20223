@@ -282,7 +282,7 @@ st.divider()
 # -----------------------------------------------------------------------------
 st.header("8. 영화 제작 상위 10개 국가별 최다 제작 장르 & 최고 흥행 영화")
 
-# 1) 영화 제작 수가 많은 순서대로 상위 10개 국가 및 총 제작 편수 추출
+# 1) 영화 제작 수가 많은 순서대로 상위 10개 국가 및 총 제작 편수 추출 (내림차순 정렬)
 nation_total_counts = df['nation'].value_counts().head(10).reset_index()
 nation_total_counts.columns = ['nation', '국가별총편수']
 
@@ -307,12 +307,13 @@ top_movie_df = (
 )
 top_movie_df.columns = ['nation', '흥행영화명', '흥행영화장르', '흥행관객수']
 
-# 4) 정보 통합 및 정렬 (가장 많은 제작 편수를 기록한 국가가 맨 위로 오도록 정렬)
+# 4) 정보 통합
 top10_info = pd.merge(nation_total_counts, top_genre_df, on='nation')
 top10_info = pd.merge(top10_info, top_movie_df, on='nation')
 
-top10_info['nation'] = pd.Categorical(top10_info['nation'], categories=nation_total_counts['nation'], ordered=True)
-top10_info = top10_info.sort_values('nation').reset_index(drop=True)
+# 막대가 위에서 아래로 작은 순으로 그려진 후 역순 배치되도록 오름차순 카테고리 설정
+top10_info = top10_info.sort_values('국가별총편수', ascending=True).reset_index(drop=True)
+top10_info['nation'] = pd.Categorical(top10_info['nation'], categories=top10_info['nation'], ordered=True)
 
 # 막대 내부 텍스트 구성
 top10_info['bar_label'] = top10_info.apply(
@@ -320,7 +321,7 @@ top10_info['bar_label'] = top10_info.apply(
     axis=1
 )
 
-# 국가별로 각각 다른 선명한 색상 지정 (px.colors.qualitative.Bold)
+# 국가별 개별 색상(Bold) 적용
 fig_top_genre = px.bar(
     top10_info,
     x='국가별총편수',
@@ -329,7 +330,7 @@ fig_top_genre = px.bar(
     orientation='h',
     text='bar_label',
     custom_data=['genre', '최다장르편수', '흥행영화명', '흥행영화장르', '흥행관객수'],
-    title='영화 제작 상위 10개 국가 (막대가 긴 순서대로 위에서 아래로 배치)',
+    title='영화 제작 상위 10개 국가 (가장 큰 것부터 내림차순 정렬)',
     labels={'nation': '제작 국가', '국가별총편수': '총 제작 영화 수 (개)'},
     color_discrete_sequence=px.colors.qualitative.Bold
 )
@@ -347,12 +348,9 @@ fig_top_genre.update_traces(
 )
 
 fig_top_genre.update_layout(
-    yaxis=dict(autorange="reversed"),
+    yaxis=dict(categoryorder='total ascending'), # 위쪽에 가장 큰 막대가 오도록 설정
     showlegend=False,
     margin=dict(t=50, b=20, l=20, r=20)
 )
 
 st.plotly_chart(fig_top_genre, use_container_width=True)
-
-with st.container():
-    st.info("💡 **이 그래프로 알 수 있는 것:** 영화를 가장 많이 제작한 국가부터 막대가 길게 배치되며, 각 국가별로 선명하게 다른 색상이 적용되어 각 막대의 정보([가장 많이 만들어진 장르], [가장 흥행한 영화])를 쉽게 비교할 수 있습니다.")
