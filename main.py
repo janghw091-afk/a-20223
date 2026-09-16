@@ -278,44 +278,58 @@ with st.container():
 st.divider()
 
 # -----------------------------------------------------------------------------
-# 8. 영화 제작 상위 10개 국가별 최다 제작 장르 (가로 막대 그래프)
+# 8. 영화 제작 상위 10개 국가별 최다 제작 장르 및 최고 흥행 영화
 # -----------------------------------------------------------------------------
-st.header("8. 영화 제작 상위 10개 국가별 최다 제작 장르")
+st.header("8. 영화 제작 상위 10개 국가별 최다 제작 장르 & 최고 흥행 영화")
 
 # 상위 10개 국가 추출
 top10_nations = df['nation'].value_counts().head(10).index
 df_top10 = df[df['nation'].isin(top10_nations)]
 
-# 국가별로 가장 많이 만든 장르(최다 편수 장르) 1개씩 추출
-top_genre_per_nation = (
+# 1) 국가별 최다 제작 장르(1개) 추출
+top_genre_df = (
     df_top10.groupby(['nation', 'genre'])
     .size()
     .reset_index(name='편수')
     .sort_values(['nation', '편수'], ascending=[True, False])
     .groupby('nation')
     .head(1)
-    .reset_index(drop=True)
 )
 
-# 상위 10개 국가 순서 정렬
-top_genre_per_nation['nation'] = pd.Categorical(top_genre_per_nation['nation'], categories=top10_nations, ordered=True)
-top_genre_per_nation = top_genre_per_nation.sort_values('nation').reset_index(drop=True)
+# 2) 국가별 가장 많은 관객 수를 기록한 최고 흥행 영화(1개) 추출
+top_movie_df = (
+    df_top10.sort_values(['nation', 'total_audi'], ascending=[True, False])
+    .groupby('nation')
+    .first()
+    .reset_index()[['nation', 'movieNm', 'total_audi']]
+)
+
+# 3) 국가별 최다 장르 정보와 최고 흥행 영화 정보 결합
+top10_info = pd.merge(top_genre_df, top_movie_df, on='nation')
+
+# 국가 순서를 전체 영화 제작 편수 상위 10위 순서대로 정렬
+top10_info['nation'] = pd.Categorical(top10_info['nation'], categories=top10_nations, ordered=True)
+top10_info = top10_info.sort_values('nation').reset_index(drop=True)
+
+# 막대 표기를 위한 텍스트 지정: "장르 (최고 흥행작명)"
+top10_info['bar_label'] = top10_info.apply(lambda r: f"{r['genre']} ({r['movieNm']})", axis=1)
 
 fig_top_genre = px.bar(
-    top_genre_per_nation,
+    top10_info,
     x='편수',
     y='nation',
     color='genre',
     orientation='h',
-    text='genre',
-    title='상위 10개 제작 국가별 가장 많이 만든 장르 및 편수',
+    text='bar_label',
+    custom_data=['movieNm', 'total_audi'],
+    title='상위 10개 제작 국가별 최다 제작 장르 및 최고 흥행작',
     labels={'nation': '제작 국가', '편수': '해당 장르 영화 편수 (개)', 'genre': '최다 제작 장르'},
     color_discrete_sequence=px.colors.qualitative.Pastel
 )
 
 fig_top_genre.update_traces(
     textposition='auto',
-    hovertemplate='<b>국가:</b> %{y}<br><b>최다 제작 장르:</b> %{text}<br><b>편수:</b> %{x}편'
+    hovertemplate='<b>국가:</b> %{y}<br><b>최다 제작 장르:</b> %{fullData.name}<br><b>장르 편수:</b> %{x}편<br><b>최고 흥행작:</b> %{customdata[0]} (%{customdata[1]:,}명)'
 )
 
 fig_top_genre.update_layout(
@@ -327,4 +341,4 @@ fig_top_genre.update_layout(
 st.plotly_chart(fig_top_genre, use_container_width=True)
 
 with st.container():
-    st.info("💡 **이 그래프로 알 수 있는 것:** 영화를 가장 많이 만든 상위 10개 국가를 순위대로 나열하고, 각 국가에서 **가장 많이 제작한 대표 장르 단 1개**와 해당 장르의 편수만을 깔끔하게 보여줍니다.")
+    st.info("💡 **이 그래프로 알 수 있는 것:** 영화 제작 상위 10개 국가별로 가장 많이 제작된 **주력 장르**와 함께 해당 국가 영화 중 **가장 많은 관객 수를 기록한 최고 흥행작**을 한눈에 파악할 수 있습니다.")
